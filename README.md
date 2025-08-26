@@ -18,6 +18,8 @@ The Browser Controller is a complete, production-ready browser automation soluti
 - **Type Safety**: Complete type annotations with Pydantic validation
 - **Enterprise Ready**: Comprehensive logging, error handling, and testing
 
+> **🤔 What Can You Do?** → See [CAPABILITIES.md](CAPABILITIES.md) for a comprehensive overview of all browser automation capabilities and real-world use cases.
+
 ## ✨ Key Features
 
 ### Core Capabilities
@@ -151,6 +153,7 @@ browser_controller/
 
 | Document | Description |
 |----------|-------------|
+| **[CAPABILITIES.md](CAPABILITIES.md)** | Complete overview of what the Browser Controller can do |
 | **[README.md](README.md)** | Project overview and quick start guide |
 | **[API Reference](docs/API_REFERENCE.md)** | Complete API documentation with examples |
 | **[Configuration & API](docs/CONFIGURATION_AND_API.md)** | Detailed configuration and advanced API usage |
@@ -160,6 +163,7 @@ browser_controller/
 
 ### Quick Links
 
+- 🤔 **[What Can You Do?](CAPABILITIES.md)** - Complete overview of all automation capabilities
 - 🚀 **[Quick Start](#quick-start)** - Get started in 5 minutes
 - ⚙️ **[Configuration Guide](docs/CONFIGURATION_AND_API.md#configuration)** - All configuration options
 - 🎯 **[Examples](docs/EXAMPLES.md)** - Copy-paste examples for common tasks
