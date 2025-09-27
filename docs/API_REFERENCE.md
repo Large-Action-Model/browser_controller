@@ -292,6 +292,34 @@ Get current page title.
 **Returns:**
 - `str`: Page title
 
+##### `get_dom()`
+```python
+async def get_dom(self) -> str
+```
+Get the complete DOM (HTML source) of the current page.
+
+**Returns:**
+- `str`: Complete HTML source code as string for DOM analyzer component
+
+**Raises:**
+- `BrowserControllerError`: If DOM retrieval fails
+
+**Example:**
+```python
+# Get DOM for analysis
+dom_html = await controller.get_dom()
+print(f"DOM size: {len(dom_html):,} characters")
+
+# Feed to DOM analyzer component
+analysis_result = dom_analyzer.analyze(dom_html)
+```
+
+**Notes:**
+- Automatically launches browser if not already running
+- Executes asynchronously to avoid blocking
+- Logs DOM size and current URL for debugging
+- Perfect for integration with LAM DOM analysis components
+
 ##### `go_back()`
 ```python
 async def go_back(self) -> None
@@ -1011,6 +1039,64 @@ async def complete_api_example():
 
 # Run example
 asyncio.run(complete_api_example())
+```
+
+### DOM Analysis Integration Example
+
+```python
+import asyncio
+from src.core.browser_controller import BrowserController
+from src.config.browser_config import BrowserConfig
+from src.types.browser_types import BrowserType
+
+async def dom_analysis_example():
+    """Demonstrates DOM retrieval for analysis components"""
+    
+    config = BrowserConfig(
+        browser_type=BrowserType.CHROME,
+        headless=True,
+        window_size=(1200, 800)
+    )
+    
+    async with BrowserController(config) as controller:
+        # Navigate to target page
+        await controller.navigate_to("https://example.com")
+        
+        # Get DOM for analysis
+        dom_html = await controller.get_dom()
+        print(f"Retrieved DOM: {len(dom_html):,} characters")
+        
+        # Mock DOM analyzer integration
+        def analyze_dom(html_content):
+            """Simulate DOM analysis component"""
+            import re
+            return {
+                "size": len(html_content),
+                "elements": {
+                    "headings": len(re.findall(r'<h[1-6]', html_content, re.IGNORECASE)),
+                    "paragraphs": len(re.findall(r'<p>', html_content, re.IGNORECASE)),
+                    "links": len(re.findall(r'<a\s+[^>]*href', html_content, re.IGNORECASE)),
+                    "forms": len(re.findall(r'<form', html_content, re.IGNORECASE))
+                },
+                "has_javascript": '<script' in html_content.lower(),
+                "has_css": '<style' in html_content.lower() or 'stylesheet' in html_content.lower()
+            }
+        
+        # Analyze DOM
+        analysis = analyze_dom(dom_html)
+        print(f"DOM Analysis: {analysis}")
+        
+        # Use with session context manager
+        async with controller.new_session() as session:
+            await session.navigate_to("https://httpbin.org/html")
+            
+            # DOM retrieval works even with active session
+            dom_html = await controller.get_dom()
+            print(f"Session DOM size: {len(dom_html):,} characters")
+
+# Run examples
+asyncio.run(complete_api_example())
+asyncio.run(dom_analysis_example())
 ```
 
 This completes the comprehensive API reference documentation for the Browser Controller. All classes, methods, parameters, and examples are documented with proper types and usage patterns.

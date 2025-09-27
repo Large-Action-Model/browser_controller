@@ -8,7 +8,7 @@ with open("requirements.txt", "r", encoding="utf-8") as fh:
 
 setup(
     name="browser-controller",
-    version="1.0.0",
+    version="1.0.1",
     author="LAM Project",
     author_email="thedeveloper.gg@gmail.com",
     description="Browser Controller component for Large Action Model (LAM) web automation",

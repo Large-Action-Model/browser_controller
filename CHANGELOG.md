@@ -2,6 +2,27 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.0.1] - 2025-09-27
+
+### ✨ New Features
+
+#### DOM Analysis Integration
+- **get_dom()**: New method to retrieve complete HTML source for DOM analysis components
+  - Returns full page HTML source as string
+  - Async execution with proper error handling
+  - Comprehensive logging of DOM size and current URL
+  - Perfect integration with LAM DOM analyzer components
+  - Auto-launches browser if not already running
+  - Works with both direct calls and session context managers
+
+#### Documentation & Testing
+- **DOM Test Example**: Complete test suite demonstrating DOM retrieval functionality
+  - Tests multiple website types (simple, basic, complex)
+  - DOM analysis simulation with element counting
+  - Session context manager integration testing
+  - File output for DOM inspection
+  - Mock DOM analyzer component demonstration
+
 ## [1.0.0] - 2025-08-23
 
 ### 🎉 Initial Release

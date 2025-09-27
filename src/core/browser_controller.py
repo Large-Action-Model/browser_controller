@@ -226,6 +226,32 @@ class BrowserController:
         async with self.new_session() as session:
             return await session.get_page_info()
     
+    async def get_dom(self) -> str:
+        """
+        Get the complete DOM (HTML source) of the current page.
+        
+        Returns:
+            Complete HTML source code as string for DOM analyzer component
+        """
+        if not self._is_launched:
+            await self.launch()
+        
+        try:
+            dom_source = await asyncio.get_event_loop().run_in_executor(
+                None, lambda: self._driver.page_source
+            )
+            
+            self.logger.info("DOM retrieved", {
+                "dom_size": len(dom_source),
+                "current_url": self._driver.current_url
+            })
+            
+            return dom_source
+            
+        except Exception as e:
+            self.logger.error("Error retrieving DOM", exception=e)
+            raise BrowserControllerError(f"Failed to retrieve DOM: {str(e)}") from e
+    
     async def find_element(self, locator: ElementLocator, timeout: Optional[float] = None):
         """Find element using a temporary session."""
         async with self.new_session() as session:

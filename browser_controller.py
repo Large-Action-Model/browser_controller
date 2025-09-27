@@ -24,7 +24,7 @@ from src.utils import (
 )
 
 # Package metadata
-__version__ = "1.0.0"
+__version__ = "1.0.1"
 __author__ = "LAM Project"
 __description__ = "Browser Controller component for Large Action Model web automation"
 __license__ = "MIT"

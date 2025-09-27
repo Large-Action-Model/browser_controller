@@ -7,9 +7,10 @@ This document provides comprehensive examples of using the Browser Controller fo
 1. [Basic Operations](#basic-operations)
 2. [Form Automation](#form-automation)
 3. [Data Extraction](#data-extraction)
-4. [Testing Scenarios](#testing-scenarios)
-5. [Advanced Patterns](#advanced-patterns)
-6. [Real-World Use Cases](#real-world-use-cases)
+4. [DOM Analysis Integration](#dom-analysis-integration)
+5. [Testing Scenarios](#testing-scenarios)
+6. [Advanced Patterns](#advanced-patterns)
+7. [Real-World Use Cases](#real-world-use-cases)
 
 ## Basic Operations
 
@@ -309,6 +310,221 @@ async def table_extraction():
             await controller.close_session(session.session_id)
 
 asyncio.run(table_extraction())
+```
+
+## DOM Analysis Integration
+
+### Complete DOM Retrieval for Analysis Components
+
+```python
+import asyncio
+import re
+from pathlib import Path
+from src.core.browser_controller import BrowserController
+from src.config.browser_config import BrowserConfig
+from src.types.browser_types import BrowserType
+
+async def dom_analysis_example():
+    """Comprehensive DOM analysis integration example"""
+    config = BrowserConfig(
+        browser_type=BrowserType.CHROME,
+        headless=True,
+        window_size=(1200, 800),
+        page_load_timeout=30
+    )
+    
+    async with BrowserController(config) as controller:
+        # Test different types of websites
+        test_sites = [
+            {"name": "Simple HTML", "url": "https://httpbin.org/html"},
+            {"name": "Basic Website", "url": "https://example.com"},
+            {"name": "Complex Site", "url": "https://news.ycombinator.com"}
+        ]
+        
+        for site in test_sites:
+            print(f"\n🔍 Analyzing {site['name']}...")
+            
+            try:
+                # Navigate to site
+                result = await controller.navigate_to(site['url'])
+                print(f"✅ Navigation successful in {result.load_time:.2f}s")
+                
+                # Get complete DOM
+                dom_html = await controller.get_dom()
+                print(f"📄 DOM retrieved: {len(dom_html):,} characters")
+                
+                # Analyze DOM structure
+                analysis = analyze_dom_structure(dom_html)
+                display_analysis(analysis, site['name'])
+                
+                # Save DOM for inspection
+                filename = f"dom_{site['name'].lower().replace(' ', '_')}.html"
+                save_dom_to_file(dom_html, filename)
+                
+            except Exception as e:
+                print(f"❌ Error analyzing {site['name']}: {e}")
+        
+        # Demonstrate session context manager with DOM
+        print(f"\n🎯 Testing with session context manager...")
+        async with controller.new_session() as session:
+            await session.navigate_to("https://httpbin.org/json")
+            
+            # DOM works even with active session
+            dom_html = await controller.get_dom()
+            print(f"📊 Session DOM size: {len(dom_html):,} characters")
+            
+            # Get page info for context
+            page_info = await session.get_page_info()
+            print(f"📋 Page: {page_info.title or 'No title'} | {page_info.url}")
+
+def analyze_dom_structure(html_content: str) -> dict:
+    """Analyze DOM structure for various elements"""
+    return {
+        "size_stats": {
+            "total_chars": len(html_content),
+            "total_lines": html_content.count('\n'),
+            "size_kb": len(html_content.encode('utf-8')) / 1024
+        },
+        "elements": {
+            "headings": len(re.findall(r'<h[1-6]', html_content, re.IGNORECASE)),
+            "paragraphs": len(re.findall(r'<p>', html_content, re.IGNORECASE)),
+            "links": len(re.findall(r'<a\s+[^>]*href', html_content, re.IGNORECASE)),
+            "images": len(re.findall(r'<img\s+[^>]*src', html_content, re.IGNORECASE)),
+            "forms": len(re.findall(r'<form', html_content, re.IGNORECASE)),
+            "inputs": len(re.findall(r'<input', html_content, re.IGNORECASE)),
+            "buttons": len(re.findall(r'<button', html_content, re.IGNORECASE)),
+            "divs": len(re.findall(r'<div', html_content, re.IGNORECASE)),
+            "spans": len(re.findall(r'<span', html_content, re.IGNORECASE))
+        },
+        "features": {
+            "has_javascript": '<script' in html_content.lower(),
+            "has_css": '<style' in html_content.lower() or 'stylesheet' in html_content.lower(),
+            "has_meta_viewport": 'name="viewport"' in html_content.lower(),
+            "is_html5": html_content.strip().startswith('<!DOCTYPE html>') or html_content.strip().startswith('<!doctype html>'),
+            "has_forms": '<form' in html_content.lower(),
+            "has_ajax_indicators": any(term in html_content.lower() for term in ['fetch(', 'xmlhttprequest', '$.ajax', 'axios'])
+        },
+        "content_analysis": {
+            "estimated_text_content": len(re.sub(r'<[^>]+>', '', html_content)),
+            "script_to_content_ratio": (html_content.lower().count('<script') / max(1, html_content.count('<'))) * 100,
+            "link_density": (html_content.lower().count('<a ') / max(1, len(html_content))) * 10000
+        }
+    }
+
+def display_analysis(analysis: dict, site_name: str):
+    """Display formatted analysis results"""
+    print(f"  📊 {site_name} Analysis:")
+    
+    # Size stats
+    size = analysis['size_stats']
+    print(f"    Size: {size['total_chars']:,} chars | {size['total_lines']:,} lines | {size['size_kb']:.1f} KB")
+    
+    # Elements
+    elements = analysis['elements']
+    print(f"    Elements:")
+    for elem_type, count in elements.items():
+        if count > 0:
+            print(f"      - {elem_type.title()}: {count}")
+    
+    # Features
+    features = analysis['features']
+    print(f"    Features: ", end="")
+    active_features = [name.replace('has_', '').replace('is_', '') for name, value in features.items() if value]
+    print(" | ".join(active_features) if active_features else "Basic HTML")
+    
+    # Content insights
+    content = analysis['content_analysis']
+    print(f"    Content: ~{content['estimated_text_content']:,} text chars | Script ratio: {content['script_to_content_ratio']:.1f}%")
+
+def save_dom_to_file(dom_html: str, filename: str):
+    """Save DOM to file for inspection"""
+    filepath = Path("examples") / filename
+    filepath.parent.mkdir(exist_ok=True)
+    
+    with open(filepath, 'w', encoding='utf-8') as f:
+        f.write(dom_html)
+    print(f"    💾 Saved to: {filename}")
+
+# Integration with mock DOM analyzer component
+async def dom_analyzer_integration():
+    """Demonstrate integration with a DOM analyzer component"""
+    
+    class MockDOMAnalyzer:
+        """Mock DOM analyzer component for LAM systems"""
+        
+        def analyze(self, html_content: str) -> dict:
+            """Analyze HTML for actionable insights"""
+            return {
+                "interactive_elements": self._find_interactive_elements(html_content),
+                "navigation_structure": self._analyze_navigation(html_content),
+                "form_analysis": self._analyze_forms(html_content),
+                "content_sections": self._identify_content_sections(html_content),
+                "accessibility_score": self._calculate_accessibility_score(html_content)
+            }
+        
+        def _find_interactive_elements(self, html: str) -> dict:
+            return {
+                "clickable": len(re.findall(r'<(a|button|input[^>]*type="(button|submit)"))', html, re.IGNORECASE)),
+                "form_fields": len(re.findall(r'<(input|textarea|select)', html, re.IGNORECASE)),
+                "links": len(re.findall(r'<a\s+[^>]*href', html, re.IGNORECASE))
+            }
+        
+        def _analyze_navigation(self, html: str) -> dict:
+            return {
+                "has_main_nav": bool(re.search(r'<nav|class="nav|id="nav', html, re.IGNORECASE)),
+                "breadcrumbs": bool(re.search(r'breadcrumb|crumb', html, re.IGNORECASE)),
+                "menu_items": len(re.findall(r'<li[^>]*>', html, re.IGNORECASE))
+            }
+        
+        def _analyze_forms(self, html: str) -> dict:
+            forms = re.findall(r'<form[^>]*>(.*?)</form>', html, re.DOTALL | re.IGNORECASE)
+            return {
+                "form_count": len(forms),
+                "has_search": bool(re.search(r'type="search"|name="q"|name="search"', html, re.IGNORECASE)),
+                "has_login": bool(re.search(r'password|login|signin', html, re.IGNORECASE))
+            }
+        
+        def _identify_content_sections(self, html: str) -> dict:
+            return {
+                "has_header": bool(re.search(r'<header|class="header"', html, re.IGNORECASE)),
+                "has_footer": bool(re.search(r'<footer|class="footer"', html, re.IGNORECASE)),
+                "has_sidebar": bool(re.search(r'<aside|sidebar|side-bar', html, re.IGNORECASE)),
+                "main_content": bool(re.search(r'<main|class="main|id="main"', html, re.IGNORECASE))
+            }
+        
+        def _calculate_accessibility_score(self, html: str) -> int:
+            score = 0
+            if 'alt=' in html: score += 20
+            if 'aria-' in html: score += 20
+            if 'role=' in html: score += 15
+            if '<label' in html: score += 15
+            if 'lang=' in html: score += 10
+            if 'tabindex=' in html: score += 10
+            if '<h1' in html and '<h2' in html: score += 10
+            return min(score, 100)
+    
+    # Test the integration
+    config = BrowserConfig(browser_type=BrowserType.CHROME, headless=True)
+    analyzer = MockDOMAnalyzer()
+    
+    async with BrowserController(config) as controller:
+        await controller.navigate_to("https://example.com")
+        
+        # Get DOM and analyze
+        dom_html = await controller.get_dom()
+        analysis_result = analyzer.analyze(dom_html)
+        
+        print("\n🤖 DOM Analyzer Component Results:")
+        print(f"  Interactive Elements: {analysis_result['interactive_elements']}")
+        print(f"  Navigation: {analysis_result['navigation_structure']}")
+        print(f"  Forms: {analysis_result['form_analysis']}")
+        print(f"  Content Sections: {analysis_result['content_sections']}")
+        print(f"  Accessibility Score: {analysis_result['accessibility_score']}/100")
+
+# Run examples
+if __name__ == "__main__":
+    asyncio.run(dom_analysis_example())
+    asyncio.run(dom_analyzer_integration())
 ```
 
 ## Testing Scenarios
